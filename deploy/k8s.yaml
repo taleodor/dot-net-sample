@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: min-dot-net
+  namespace: pstest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: min-dot-net
+  template:
+    metadata:
+      labels:
+        app: min-dot-net
+    spec:
+      containers:
+        - name: min-dot-net
+          image: registry.test.relizahub.com/d37e928b-94fc-4cc2-87a6-4b367c182752-public/min-dot-net
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: min-dot-net
+  namespace: pstest
+spec:
+  type: ClusterIP
+  selector:
+    app: min-dot-net
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+
+--- 
+
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: websecure-ingressroute
+  namespace: pstest
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`mpstests.relizahub.com`)
+    kind: Rule
+    services:
+    - name: min-dot-net
+      port: 80
+  tls:
+    certResolver: le
